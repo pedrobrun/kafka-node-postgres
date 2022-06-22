@@ -25,7 +25,7 @@ async function run() {
       const stringifiedRes = JSON.stringify({
         message: 'Values were consumed by consumer',
       });
-      producer.send({
+      await producer.send({
         topic: 'payment-response',
         messages: [{ value: stringifiedRes }],
       });

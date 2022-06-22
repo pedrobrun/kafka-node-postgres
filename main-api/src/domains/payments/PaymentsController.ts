@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { producer } from '../../app';
+import { consumer, producer } from '../../app';
 
 const paymentsRouter = express.Router();
 
@@ -16,9 +16,21 @@ paymentsRouter.post('/', async (req: Request, res: Response) => {
 
   const stringified = JSON.stringify({ sender, recipient, value });
 
+  await consumer.subscribe({ topic: 'payment-response', fromBeginning: true });
   await producer.send({
     topic: 'send-payment',
     messages: [{ value: stringified }],
+  });
+
+  await consumer.run({
+    eachMessage: async ({ topic, partition, message }) => {
+      if (message && message.value) {
+        console.log(message.value.toString());
+      }
+      const resMsg = message.value?.toString() ?? 'Error';
+
+      res.send(JSON.parse(resMsg));
+    },
   });
 });
 
